@@ -66,3 +66,12 @@ CREATE TABLE IF NOT EXISTS Resena (
     FOREIGN KEY (isbn) REFERENCES Libro(isbn),
     UNIQUE (id_usuario, isbn)
 );
+
+-- Índices en FKs y queries calientes (PostgreSQL NO indexa FKs automáticamente)
+CREATE INDEX IF NOT EXISTS idx_libro_autor      ON libro(id_autor);
+CREATE INDEX IF NOT EXISTS idx_libro_genero     ON libro(id_genero);
+CREATE INDEX IF NOT EXISTS idx_prestamo_usuario ON prestamo(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_prestamo_isbn    ON prestamo(isbn);
+CREATE INDEX IF NOT EXISTS idx_prestamo_activo  ON prestamo(isbn, id_usuario) WHERE fecha_devolucion_real IS NULL;
+CREATE INDEX IF NOT EXISTS idx_resena_usuario   ON resena(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_resena_isbn      ON resena(isbn);

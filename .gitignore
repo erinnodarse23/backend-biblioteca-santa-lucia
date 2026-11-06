@@ -4,3 +4,8 @@ target/
 *.iml
 *.log
 .DS_Store
+# Artefactos
+*.jar
+
+# Backups locales
+.backup-*
