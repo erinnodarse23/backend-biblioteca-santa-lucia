@@ -12,3 +12,6 @@ target/
 
 # Config local con secretos
 application-local.properties
+
+# PostgreSQL upgrade backups
+pg10_backup_*.sql
