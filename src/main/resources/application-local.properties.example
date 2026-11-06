@@ -1,0 +1,6 @@
+# Copia este archivo a application-local.properties y pon tu password real:
+#   Copy-Item application-local.properties.example application-local.properties
+#
+# application-local.properties esta en .gitignore (no se sube al repo).
+
+spring.datasource.password=TU_PASSWORD_DE_POSTGRES

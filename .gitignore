@@ -9,3 +9,6 @@ target/
 
 # Backups locales
 .backup-*
+
+# Config local con secretos
+application-local.properties
