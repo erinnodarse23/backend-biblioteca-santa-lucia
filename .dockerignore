@@ -1,0 +1,13 @@
+target/
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+*.iml
+*.log
+.DS_Store
+backups_pg10_*/
+pg10_backup_*.sql
+*.dump
+docs/
