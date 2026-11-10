@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build + 16 unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compile
+        run: mvn -B clean compile -DskipTests
+
+      - name: Run unit tests
+        run: mvn -B test
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+  smoke-e2e:
+    name: Smoke E2E (PostgreSQL 18 + app)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build-and-test
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: biblioteca_santa_lucia
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Apply schema + seed
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d biblioteca_santa_lucia -f scripts/tablas.sql
+          psql -h localhost -U postgres -d biblioteca_santa_lucia -c "INSERT INTO autor (nombre, apellido, nacionalidad) VALUES ('Gabriel','Garcia Marquez','Colombiana');"
+          psql -h localhost -U postgres -d biblioteca_santa_lucia -c "INSERT INTO genero (nombre, descripcion) VALUES ('Realismo magico','Genero literario');"
+          psql -h localhost -U postgres -d biblioteca_santa_lucia -c "INSERT INTO usuario (nombre, apellido, email, direccion) VALUES ('Ana','Perez','ana@test.cu','Calle 1');"
+
+      - name: Verify 7 indexes
+        env:
+          PGPASSWORD: postgres
+        run: |
+          COUNT=$(psql -h localhost -U postgres -d biblioteca_santa_lucia -t -A -c "SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE 'idx_%';")
+          echo "Indexes found: $COUNT"
+          if [ "$COUNT" != "7" ]; then
+            echo "ERROR: Expected 7 indexes, got $COUNT"
+            exit 1
+          fi
+
+      - name: Package jar
+        run: mvn -B clean package -DskipTests
+
+      - name: Start app + smoke test
+        run: |
+          set -e
+          export DB_PASSWORD=postgres
+          java -jar target/spring-biblioteca-*.jar > app.log 2>&1 &
+          APP_PID=$!
+          echo "App PID: $APP_PID"
+
+          echo "=== Waiting for startup ==="
+          for i in {1..60}; do
+            if curl -sf http://localhost:8080/api/libros > /dev/null 2>&1; then
+              echo "App ready after ${i}*2s"
+              break
+            fi
+            if ! kill -0 $APP_PID 2>/dev/null; then
+              echo "ERROR: App died during startup"
+              cat app.log
+              exit 1
+            fi
+            sleep 2
+          done
+
+          echo "=== Smoke asserts ==="
+          PASS=0
+          FAIL=0
+
+          assert_eq() {
+            local actual=$1
+            local expected=$2
+            local label=$3
+            if [ "$actual" = "$expected" ]; then
+              echo "  [OK]   $label -> $actual"
+              PASS=$((PASS+1))
+            else
+              echo "  [FAIL] $label -> expected $expected, got $actual"
+              FAIL=$((FAIL+1))
+            fi
+          }
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/v3/api-docs)
+          assert_eq "$STATUS" "200" "GET /v3/api-docs"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/libros)
+          assert_eq "$STATUS" "200" "GET /api/libros"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/autores)
+          assert_eq "$STATUS" "200" "GET /api/autores"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/autores/999999)
+          assert_eq "$STATUS" "404" "GET /api/autores/999999"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/autores \
+            -H "Content-Type: application/json" \
+            -d '{"nombre":"","apellido":"X","nacionalidad":"Cubana"}')
+          assert_eq "$STATUS" "400" "POST /api/autores invalido"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:8080/api/autores/1)
+          assert_eq "$STATUS" "204" "DELETE autor sin libros"
+
+          echo ""
+          echo "=== RESULT: $PASS passed, $FAIL failed ==="
+
+          kill $APP_PID 2>/dev/null || true
+
+          if [ "$FAIL" -gt 0 ]; then
+            echo "=== App log (tail 30) ==="
+            tail -30 app.log
+            exit 1
+          fi
+
+      - name: Upload app log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-log
+          path: app.log
+          retention-days: 7
