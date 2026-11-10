@@ -1,230 +1,329 @@
-# Biblioteca Santa Lucía
+# 📚 Biblioteca Santa Lucía
 
-Sistema backend desarrollado como trabajo de curso para la asignatura de Bases de Datos. El proyecto gestiona una biblioteca mediante una API REST construida con Spring Boot y PostgreSQL, cubriendo el mantenimiento de autores, géneros, libros, usuarios, préstamos y reseñas.
+[![Java](https://img.shields.io/badge/Java-25_LTS-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.2-6DB33F?style=flat-square&logo=spring-boot)](https://spring.io/projects/spring-boot)
+[![Spring Framework](https://img.shields.io/badge/Spring_Framework-7.0.10-6DB33F?style=flat-square&logo=spring)](https://spring.io/)
+[![Hibernate](https://img.shields.io/badge/Hibernate-7.4.13-59666C?style=flat-square&logo=hibernate)](https://hibernate.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18.6-336791?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-85EA2D?style=flat-square&logo=swagger)](https://swagger.io/)
+[![Tests](https://img.shields.io/badge/tests-51_passing_(16_unit_+_35_e2e)-brightgreen?style=flat-square)](#-tests)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
-Autor: Erin Nodarse Gonzalez  
-Carrera: Ingeniería Informática  
-Curso: 2do año, periodo 2024-2025
+API REST para gestión bibliotecaria: control de libros, autores, géneros, usuarios, préstamos y reseñas. Proyecto de **fundamentos** reestructurado para portafolio, donde consolidé modelado relacional, JPA, reglas de negocio, validación y testing. Corre con **Java 25 + Spring Boot 4.1 + PostgreSQL 18**.
 
-> Este repositorio contiene únicamente el backend. No incluye frontend porque el alcance del proyecto se limita a la capa de servidor y base de datos.
+**Proyecto complementario a [telefonia-ecasa](https://github.com/erinnodarse23/telefonia-ecasa)** — ver [Contexto](#-contexto) para entender la relación.
 
-## Descripción del proyecto
+---
 
-La aplicación expone una API REST para administrar la información principal de una biblioteca académica. Permite registrar y consultar entidades, validar relaciones entre tablas y ejecutar operaciones típicas de gestión bibliotecaria, como el alta de libros, el control de préstamos, la devolución de ejemplares y la publicación de reseñas.
+## 🎯 Contexto
 
-Además, el repositorio incluye scripts SQL para crear la estructura de la base de datos y ejemplos de consultas, vistas y operaciones de apoyo.
+Este proyecto nació como trabajo académico de 2º año (periodo 2024-2025) para la asignatura de Bases de Datos. Fue reestructurado completamente para portafolio: stack actualizado a las últimas versiones LTS, tests, Docker, smoke tests E2E y buenas prácticas de producción.
 
-## Tecnologías utilizadas
+Su rol en el portafolio es mostrar los **fundamentos** sobre los que se construyó después un sistema empresarial más grande:
 
-| Tecnología | Versión / uso |
-| --- | --- |
-| Java | 17 |
-| Spring Boot | 3.2.5 |
-| Spring Web | API REST |
-| Spring Data JPA | Persistencia |
-| Spring Validation | Validación de datos |
-| PostgreSQL | Base de datos relacional |
-| Lombok | Reducción de código repetitivo |
-| Maven | Gestión del proyecto |
+| Este proyecto | [telefonia-ecasa](https://github.com/erinnodarse23/telefonia-ecasa) |
+|---|---|
+| Fundamentos: JPA, modelado, validación, testing | Producción: JWT, rate limiting, analytics, RBAC |
+| CRUD + 5 reglas de negocio | 14 controllers, 20+ services, dashboard |
+| 51 tests (16 unit + 35 E2E) | 92 tests (backend + frontend) |
+| PostgreSQL 18 local | PostgreSQL gestionado en ZevCloud |
+| Docker Compose para dev | Docker + Render + CI/CD |
 
-## Estructura del proyecto
+**Qué sí demuestra:** modelado relacional, JPA/Hibernate, Bean Validation, Spring Data, diseño de API REST, manejo centralizado de errores, testing de servicios y controllers, migración de stack mayor (Spring Boot 3 → 4, Java 17 → 25, PG 10 → 18).
+
+**Qué no intenta ser:** un sistema de producción con autenticación, rate limiting o dashboards — eso está en ecasa.
+
+---
+
+## 🛠️ Stack técnico
+
+### Backend
+
+| Tecnología | Versión | Uso |
+|---|---|---|
+| **Java** | 25 LTS | Lenguaje (Virtual Threads, Pattern Matching) |
+| **Spring Boot** | 4.1.2 | Framework principal |
+| **Spring Framework** | 7.0.10 | Núcleo MVC, DI |
+| **Spring Data JPA** | 4.1.2 | Persistencia |
+| **Hibernate ORM** | 7.4.13 | ORM |
+| **Tomcat** | 11.0.27 | Servidor embebido |
+| **Jackson** | 3.1.7 | Serialización JSON |
+| **Springdoc OpenAPI** | 3.0.3 | Swagger UI + OpenAPI 3.1 |
+| **PostgreSQL Driver** | 42.7.13 | JDBC |
+| **Lombok** | 1.18.44 | Reducción de boilerplate |
+| **Maven** | 3.9+ | Build tool |
+
+### Infraestructura
+
+| Servicio | Uso |
+|---|---|
+| **PostgreSQL 18.6** | Base de datos relacional |
+| **Docker Compose** | Entorno local reproducible |
+
+---
+
+## 🏗️ Arquitectura
+
+```mermaid
+graph LR
+    A[Cliente HTTP] -->|JSON| B[Controller]
+    B --> C[Service]
+    C --> D[Repository JPA]
+    D --> E[(PostgreSQL 18)]
+    B -.-> F[DTO request/response]
+    B -.-> G[GlobalExceptionHandler]
+    style B fill:#6DB33F
+    style C fill:#6DB33F
+    style D fill:#6DB33F
+    style E fill:#336791
+```
+
+### Estructura del proyecto
 
 ```text
-Proyecto/
-├── pom.xml
-├── README.md
-├── lib/
-│   └── postgresql-42.7.7.jar
+backend-biblioteca-santa-lucia/
+├── .mvn/
+│   └── maven.config              # Timeouts + retries para redes inestables
+├── .vscode/
+│   └── settings.json             # Java 25 + null analysis off
 ├── scripts/
-│   ├── tablas.sql
-│   └── operaciones.sql
-└── src/
-    └── main/
-        ├── java/com/biblioteca/springbiblioteca/
-        │   ├── controller/
-        │   ├── dto/
-        │   ├── entity/
-        │   ├── exception/
-        │   ├── mapper/
-        │   ├── repository/
-        │   └── service/
-        └── resources/
-            ├── application.properties
-            └── db.properties
+│   ├── tablas.sql                # Schema + 7 índices
+│   ├── operaciones.sql           # Consultas de ejemplo
+│   └── smoke-test.ps1            # Smoke test E2E (35 asserts)
+├── src/main/
+│   ├── java/com/biblioteca/springbiblioteca/
+│   │   ├── controller/           # 6 controllers REST
+│   │   ├── dto/                  # request/ + response/ (records)
+│   │   ├── entity/               # 6 entidades JPA
+│   │   ├── exception/            # GlobalExceptionHandler + errores custom
+│   │   ├── mapper/               # LibroMapper
+│   │   ├── repository/           # 6 repositorios JpaRepository
+│   │   ├── service/              # 4 services con reglas de negocio
+│   │   └── SpringBibliotecaApplication.java
+│   └── resources/
+│       ├── application.properties           # config base
+│       ├── application-dev.properties       # SQL logging
+│       ├── application-prod.properties      # ddl-auto=validate
+│       └── application-local.properties.example
+├── src/test/java/...             # 3 test classes (16 tests)
+└── pom.xml
 ```
 
-## Módulos del backend
+---
 
-- Autores
-- Géneros
-- Libros
-- Usuarios
-- Préstamos
-- Reseñas
+## 🎯 Funcionalidades destacadas
 
-## Funcionalidades principales
+### Gestión bibliotecaria
+- 📖 **Libros** con ISBN, título, año, categoría, cantidad de ejemplares
+- ✍️ **Autores** con relación 1:N a libros
+- 🏷️ **Géneros** con relación 1:N a libros
+- 👤 **Usuarios** con email único y datos de contacto
+- 🔄 **Préstamos** con fecha de salida/devolución y estado
+- ⭐ **Reseñas** con calificación 1-5 y comentario único por usuario+libro
 
-- CRUD completo de autores, géneros, libros, usuarios, préstamos y reseñas.
-- Consulta del detalle completo de un libro.
-- Consulta de préstamos de un libro por rango de fechas.
-- Registro de devoluciones de préstamos.
-- Verificación de si un usuario ya reseñó un libro.
-- Consulta de usuarios con préstamos vencidos.
-- Validaciones de integridad y reglas de negocio desde la capa backend.
+### Reglas de negocio (validadas en `Service`)
+- 🚫 Un usuario no puede tener más de **5 préstamos activos** simultáneos
+- 🚫 Un usuario **con préstamos vencidos** no puede pedir nuevos
+- 🚫 No se presta un libro **sin ejemplares disponibles**
+- 🚫 **Una reseña por usuario/libro** (validado también con `UNIQUE` en BD)
+- 🚫 Solo se puede reseñar un libro que **ya fue devuelto**
 
-## Base de datos
+### Calidad de código
+- ✅ **Bean Validation** en DTOs (`@NotBlank`, `@Size`, `@Pattern`, `@Positive`)
+- 🚨 **GlobalExceptionHandler** con `@ControllerAdvice`: 400 (validación), 404 (no encontrado), 409 (regla de negocio o integridad), 500 (sin leaks)
+- 🛡️ **409 para FK violations** sin filtrar detalles técnicos al cliente
+- 🗄️ **SQL versionado** con schema + seed + 7 índices (incluye índice parcial para préstamos activos)
+- 🧪 **51 tests**: 16 unitarios (JUnit 5 + Mockito) + 35 asserts E2E
 
-La base de datos está modelada en PostgreSQL y la estructura principal se crea desde [scripts/tablas.sql](scripts/tablas.sql).
+---
 
-### Tablas principales
+## 🚀 Quick Start
 
-- `Autor`
-- `Genero`
-- `Libro`
-- `Usuario`
-- `Prestamo`
-- `Resena`
+### Requisitos
+- Java 25 LTS ([Temurin](https://adoptium.net/))
+- Maven 3.9+
+- PostgreSQL 18
+- PowerShell 5.1+ (Windows) o bash (Linux/macOS)
 
-### Archivo de operaciones
-
-El archivo [scripts/operaciones.sql](scripts/operaciones.sql) contiene ejemplos de consultas, vistas, inserciones, actualizaciones, eliminaciones y ejemplos de control de acceso sobre la base de datos.
-
-## Requisitos previos
-
-- Java 17 o superior
-- Maven 3.8+ o superior
-- PostgreSQL 14 o superior
-- Git
-
-## Configuración de la base de datos
-
-1. Crear la base de datos en PostgreSQL.
-
-```sql
-CREATE DATABASE biblioteca_santa_lucia;
-```
-
-2. Ejecutar el script de estructura.
-
-```bash
-psql -U postgres -d biblioteca_santa_lucia -f scripts/tablas.sql
-```
-
-3. Si deseas usar las consultas de ejemplo o validar la lógica SQL, ejecuta también:
-
-```bash
-psql -U postgres -d biblioteca_santa_lucia -f scripts/operaciones.sql
-```
-
-## Configuración de la aplicación
-
-El proyecto usa `DB_PASSWORD` como variable de entorno para la contraseña de PostgreSQL.
-
-En Windows PowerShell:
+### Opción 1 — PowerShell (Windows, recomendado)
 
 ```powershell
-$env:DB_PASSWORD="tu_contraseña"
-```
+git clone https://github.com/erinnodarse23/backend-biblioteca-santa-lucia.git
+cd backend-biblioteca-santa-lucia
 
-En Linux o macOS:
+# 1. Configurar credenciales locales
+Copy-Item "src\main\resources\application-local.properties.example" `
+          "src\main\resources\application-local.properties"
+# Edita application-local.properties y pon tu password de PostgreSQL
 
-```bash
-export DB_PASSWORD="tu_contraseña"
-```
+# 2. Crear BD y aplicar schema
+psql -U postgres -c "CREATE DATABASE biblioteca_santa_lucia;"
+psql -U postgres -d biblioteca_santa_lucia -f scripts/tablas.sql
 
-## Instalación y ejecución
-
-1. Clonar el repositorio.
-
-```bash
-git clone <url-del-repositorio>
-cd Proyecto
-```
-
-2. Compilar y ejecutar la aplicación.
-
-```bash
+# 3. Ejecutar
 mvn spring-boot:run
 ```
 
-La aplicación quedará disponible en:
+La app queda en:
+- API: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-```text
-http://localhost:8080
+### Opción 2 — Docker Compose
+
+```bash
+git clone https://github.com/erinnodarse23/backend-biblioteca-santa-lucia.git
+cd backend-biblioteca-santa-lucia
+docker compose up -d
 ```
 
-## Endpoints principales
+### Variables de entorno / perfiles
 
-### Autores
+| Variable | Default | Uso |
+|---|---|---|
+| `DB_PASSWORD` | (vacío) | Password de PostgreSQL. En local se toma de `application-local.properties`. En prod/CI se sobreescribe con variable de entorno |
+| `SPRING_PROFILES_ACTIVE` | `default` | `dev` para SQL logging, `prod` para `ddl-auto=validate` |
 
-- `GET /api/autores`
-- `GET /api/autores/{id}`
-- `POST /api/autores`
-- `PUT /api/autores/{id}`
-- `DELETE /api/autores/{id}`
+---
 
-### Géneros
+## 📚 API Documentation
 
-- `GET /api/generos`
-- `GET /api/generos/{id}`
-- `POST /api/generos`
-- `PUT /api/generos/{id}`
-- `DELETE /api/generos/{id}`
+Swagger UI disponible en `http://localhost:8080/swagger-ui/index.html` con OpenAPI 3.1.
 
-### Libros
+### Endpoints principales
 
-- `GET /api/libros`
-- `GET /api/libros/{isbn}`
-- `POST /api/libros`
-- `PUT /api/libros/{isbn}`
-- `DELETE /api/libros/{isbn}`
-- `GET /api/libros/{isbn}/detalle`
-- `GET /api/libros/{isbn}/prestamos?fechaIni=YYYY-MM-DD&fechaFin=YYYY-MM-DD`
+| Módulo | Endpoints |
+|---|---|
+| **Autores** | `GET/POST /api/autores` · `GET/PUT/DELETE /api/autores/{id}` |
+| **Géneros** | `GET/POST /api/generos` · `GET/PUT/DELETE /api/generos/{id}` |
+| **Libros** | `GET/POST /api/libros` · `GET/PUT/DELETE /api/libros/{isbn}` · `GET /api/libros/{isbn}/detalle` · `GET /api/libros/{isbn}/prestamos?fechaIni&fechaFin` |
+| **Usuarios** | `GET/POST /api/usuarios` · `GET/PUT/DELETE /api/usuarios/{id}` · `GET /api/usuarios/vencidos` · `GET /api/usuarios/{idUsuario}/resena/{isbn}` |
+| **Préstamos** | `GET/POST /api/prestamos` · `GET/DELETE /api/prestamos/{id}` · `PUT /api/prestamos/{id}/devolucion` |
+| **Reseñas** | `GET/POST /api/resenas` · `GET/PUT/DELETE /api/resenas/{id}` |
 
-### Usuarios
+---
 
-- `GET /api/usuarios`
-- `GET /api/usuarios/{id}`
-- `POST /api/usuarios`
-- `PUT /api/usuarios/{id}`
-- `DELETE /api/usuarios/{id}`
-- `GET /api/usuarios/vencidos`
-- `GET /api/usuarios/{idUsuario}/resena/{isbn}`
+## 🧪 Tests
 
-### Préstamos
+### Unitarios (16)
 
-- `GET /api/prestamos`
-- `GET /api/prestamos/{id}`
-- `POST /api/prestamos`
-- `PUT /api/prestamos/{id}/devolucion`
-- `DELETE /api/prestamos/{id}`
+```powershell
+mvn test
+```
 
-### Reseñas
+| Suite | Tests | Cobertura |
+|---|---|---|
+| `PrestamoServiceTest` | 9 | 4 reglas de negocio + happy path + devolución |
+| `ResenaServiceTest` | 3 | 1 reseña por usuario/libro + solo tras devolución |
+| `GlobalExceptionHandlerTest` | 4 | 400, 404, 409, 500 sin leaks |
+| **Total** | **16** | ✅ |
 
-- `GET /api/resenas`
-- `GET /api/resenas/{id}`
-- `POST /api/resenas`
-- `PUT /api/resenas/{id}`
-- `DELETE /api/resenas/{id}`
+### Smoke test end-to-end (35 asserts)
 
-## Observaciones técnicas
+```powershell
+$env:PATH = "C:\PostgreSQL\18\bin;$env:PATH"
+$env:PGPASSWORD = "tu_password"
+.\scripts\smoke-test.ps1
+```
 
-- El proyecto usa validaciones en los controladores y en los DTOs para garantizar integridad de datos.
-- El ISBN de los libros se maneja como una cadena de 13 dígitos.
-- Las relaciones entre tablas están definidas en PostgreSQL mediante claves foráneas.
-- El diseño del backend está orientado a una arquitectura simple de controladores, servicios, repositorios y entidades.
+Valida contra servidor real + PostgreSQL real:
+- Swagger UI y `/v3/api-docs`
+- Endpoints base de los 6 módulos
+- Validación 400, Not Found 404, Conflict 409
+- Reglas de negocio (préstamo sin ejemplares → 409)
+- Integridad referencial (DELETE autor con libros → 409 sin leak)
+- Verificación de los 7 índices en `pg_indexes`
 
-## Problemas comunes
+**Resultado esperado**: `35 pasadas / 0 fallidas`.
 
-### Error de conexión con PostgreSQL
+---
 
-Verifica que el servicio de PostgreSQL esté activo, que la base de datos exista y que `DB_PASSWORD` tenga el valor correcto.
+## 🤔 Decisiones técnicas destacadas
 
-### Error por variable `DB_PASSWORD` no definida
+### 1. JPA/Hibernate sobre `JdbcTemplate`
+El 100% de las queries de este proyecto son CRUD sobre entidades con relaciones bien definidas (1:N, N:M). JPA brilla aquí: `findByTituloContaining`, `@ManyToOne`/`@OneToMany`, proyecciones. En **ecasa**, en cambio, usé `JdbcTemplate` porque el 80% de las queries eran agregaciones con `LEFT JOIN LATERAL`. La elección depende del tipo de acceso a datos, no de una preferencia.
 
-Antes de ejecutar la aplicación, asegúrate de definir la variable de entorno en la terminal donde correrás Maven.
+### 2. Bean Validation en DTOs, no en entidades
+Las entidades JPA son modelo de persistencia; los DTOs son contrato de API. Validar en el DTO (`@NotBlank`, `@Email`, `@Positive`) mantiene separadas ambas responsabilidades.
 
-### Error al crear un registro duplicado
+### 3. GlobalExceptionHandler con distinción semántica de errores
+- **400** para errores de validación (con lista de campos)
+- **404** para recursos no encontrados (`EntityNotFoundException`)
+- **409** para reglas de negocio (`IllegalStateException`) **y** para violaciones de FK/UNIQUE (`DataIntegrityViolationException`)
+- **500** para errores inesperados, **sin filtrar** stack traces al cliente (se loggean server-side)
 
-El sistema valida duplicados en autores, géneros, usuarios, libros y reseñas para evitar inconsistencias en la base de datos.
+El caso 409 para `DataIntegrityViolationException` es clave: cuando intentas borrar un autor con libros asociados, PostgreSQL lanza FK violation. Sin el handler, sería un 500 con detalles internos. Con él, es un 409 con mensaje genérico y log server-side.
 
+### 4. `ddl-auto` por perfil
+- `validate` en `default` y `prod` → falla rápido si la BD no tiene el schema correcto
+- `none` es peligroso en dev porque oculta errores de schema
+- `create` / `create-drop` nunca se usan (pierdes datos)
+
+### 5. Migración Spring Boot 3.5 → 4.1 + Java 17 → 25
+Este proyecto fue migrado desde Spring Boot 3.5.16 / Java 17 / PostgreSQL 10.5. Cambios clave:
+- **Spring Boot 4.1.2** → Spring Framework 7, Hibernate 7, Tomcat 11
+- **Java 25** con Virtual Threads habilitados (`spring.threads.virtual.enabled=true`)
+- **Jackson 3** (`tools.jackson` en vez de `com.fasterxml.jackson`)
+- **Springdoc 3.0.3** con OpenAPI 3.1
+- **PostgreSQL 18.6** desde PG 10.5 (EOL)
+- **Lombok 1.18.44** con `annotationProcessorPaths` explícito (obligatorio Java 23+)
+
+Startup pasó de **~45s a ~13-17s**. Los 16 tests unitarios pasaron sin cambios (estaban escritos con Mockito puro, sin `@MockBean`).
+
+---
+
+## 📝 Roadmap
+
+### ✅ Completado
+- [x] CRUD completo de los 6 módulos
+- [x] 5 reglas de negocio en `Service`
+- [x] Bean Validation en DTOs
+- [x] GlobalExceptionHandler con ProblemDetail-like responses
+- [x] Swagger UI con Springdoc OpenAPI 3.1
+- [x] Scripts SQL versionados con 7 índices
+- [x] 16 tests unitarios (JUnit 5 + Mockito)
+- [x] Smoke test E2E de 35 asserts
+- [x] Migración a Java 25 + Spring Boot 4.1 + PostgreSQL 18
+- [x] Docker Compose para desarrollo local
+
+### 🚧 Futuro
+- [ ] GitHub Actions (lint + test + smoke en cada push)
+- [ ] Refactorizar controllers para usar DTOs en `Libro`, `Genero` y `Usuario` (hoy usan entidades)
+- [ ] Tests de controller con `@WebMvcTest` y `MockMvc`
+- [ ] Tests de repositorio con `@DataJpaTest`
+- [ ] Migrar a Spring Boot 4.2 cuando salga
+
+---
+
+## 🤝 Contribución
+
+1. Fork del repo
+2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit con [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `test:`, `docs:`)
+4. Push y Pull Request
+
+---
+
+## 📄 License
+
+MIT — ver [LICENSE](LICENSE).
+
+---
+
+## 👤 Autor
+
+**Erin Nodarse González** — Ingeniería Informática
+
+- 🐙 GitHub: [@erinnodarse23](https://github.com/erinnodarse23)
+- 💼 Portafolio: [erinnodarse.vercel.app](https://erinnodarse.vercel.app)
+- 🚀 Proyecto estrella: [telefonia-ecasa](https://github.com/erinnodarse23/telefonia-ecasa)
+
+---
+
+<div align="center">
+
+**⭐ Proyecto complementario a [telefonia-ecasa](https://github.com/erinnodarse23/telefonia-ecasa)** ⭐
+
+Hecho con ❤️ en Cuba 🇨🇺
+
+</div>
