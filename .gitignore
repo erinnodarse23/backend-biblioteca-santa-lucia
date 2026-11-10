@@ -15,3 +15,7 @@ application-local.properties
 
 # PostgreSQL upgrade backups
 pg10_backup_*.sql
+
+# Backups PostgreSQL
+backups_pg10_*/
+pg10_backup_*.sql

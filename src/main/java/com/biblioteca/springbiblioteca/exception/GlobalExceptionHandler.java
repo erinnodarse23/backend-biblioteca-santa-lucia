@@ -1,6 +1,6 @@
 package com.biblioteca.springbiblioteca.exception;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.InvalidFormatException;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ValidationErrorResponse> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
         List<ValidationErrorResponse.ValidationError> errors = new ArrayList<>();
-        for (ParameterValidationResult result : ex.getAllValidationResults()) {
+        for (ParameterValidationResult result : ex.getParameterValidationResults()) {
             if (result instanceof Errors beanErrors && beanErrors.hasFieldErrors()) {
                 for (FieldError fe : beanErrors.getFieldErrors()) {
                     errors.add(new ValidationErrorResponse.ValidationError(
@@ -79,8 +79,8 @@ public class GlobalExceptionHandler {
         Throwable cause = ex.getCause();
         if (cause instanceof InvalidFormatException invalidFormat) {
             String field = "dato";
-            if (!invalidFormat.getPath().isEmpty() && invalidFormat.getPath().get(0).getFieldName() != null) {
-                field = invalidFormat.getPath().get(0).getFieldName();
+            if (!invalidFormat.getPath().isEmpty() && invalidFormat.getPath().get(0).getPropertyName() != null) {
+                field = invalidFormat.getPath().get(0).getPropertyName();
             }
             String reason = "El formato del dato es inválido";
             if (LocalDate.class.equals(invalidFormat.getTargetType())) {
