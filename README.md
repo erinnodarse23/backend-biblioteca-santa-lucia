@@ -158,8 +158,8 @@ Copy-Item "src\main\resources\application-local.properties.example" `
 # Edita application-local.properties y pon tu password de PostgreSQL
 
 # 2. Crear BD y aplicar schema
-psql -U postgres -c "CREATE DATABASE biblioteca_santa_lucia;"
-psql -U postgres -d biblioteca_santa_lucia -f scripts/tablas.sql
+psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE biblioteca_santa_lucia;"
+psql -h localhost -p 5432 -U postgres -d biblioteca_santa_lucia -f scripts/tablas.sql
 
 # 3. Ejecutar
 mvn spring-boot:run
@@ -288,7 +288,6 @@ Startup pasó de **~45s a ~13-17s**. Los 16 tests unitarios pasaron sin cambios 
 - [x] Docker Compose para desarrollo local
 
 ### 🚧 Futuro
-- [ ] GitHub Actions (lint + test + smoke en cada push)
 - [ ] Refactorizar controllers para usar DTOs en `Libro`, `Genero` y `Usuario` (hoy usan entidades)
 - [ ] Tests de controller con `@WebMvcTest` y `MockMvc`
 - [ ] Tests de repositorio con `@DataJpaTest`
