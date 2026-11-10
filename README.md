@@ -286,6 +286,7 @@ Startup pasó de **~45s a ~13-17s**. Los 16 tests unitarios pasaron sin cambios 
 - [x] Smoke test E2E de 35 asserts
 - [x] Migración a Java 25 + Spring Boot 4.1 + PostgreSQL 18
 - [x] Docker Compose para desarrollo local
+- [x] GitHub Actions CI (Java 25 + 16 unit tests + PostgreSQL 18 + smoke E2E)
 
 ### 🚧 Futuro
 - [ ] Refactorizar controllers para usar DTOs en `Libro`, `Genero` y `Usuario` (hoy usan entidades)
