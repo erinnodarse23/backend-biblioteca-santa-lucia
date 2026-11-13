@@ -1,5 +1,6 @@
 package com.biblioteca.springbiblioteca.controller;
 
+import com.biblioteca.springbiblioteca.dto.request.UsuarioRequest;
 import com.biblioteca.springbiblioteca.dto.response.UsuarioVencidoResponse;
 import com.biblioteca.springbiblioteca.dto.response.VerificacionResenaResponse;
 import com.biblioteca.springbiblioteca.entity.Usuario;
@@ -38,36 +39,38 @@ public class UsuarioController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Usuario crear(@NotNull @Valid @RequestBody Usuario usuario) {
-        String email = usuario.getEmail().trim();
+    public Usuario crear(@NotNull @Valid @RequestBody UsuarioRequest request) {
+        String email = request.email().trim();
         if (usuarioRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalStateException("Ya existe un usuario con el mismo email");
         }
 
+        Usuario usuario = new Usuario();
         usuario.setEmail(email);
-        usuario.setNombre(usuario.getNombre().trim());
-        usuario.setApellido(usuario.getApellido().trim());
-        usuario.setDireccion(usuario.getDireccion().trim());
+        usuario.setNombre(request.nombre().trim());
+        usuario.setApellido(request.apellido().trim());
+        usuario.setDireccion(request.direccion().trim());
         return usuarioRepository.save(usuario);
     }
 
     @PutMapping("/{id}")
     public Usuario actualizar(@PathVariable @NotNull @Positive Integer id,
-                              @NotNull @Valid @RequestBody Usuario usuario) {
+                              @NotNull @Valid @RequestBody UsuarioRequest request) {
         if (!usuarioRepository.existsById(id)) {
             throw new EntityNotFoundException("Usuario no encontrado con id: " + id);
         }
 
-        String email = usuario.getEmail().trim();
+        String email = request.email().trim();
         if (usuarioRepository.existsByEmailIgnoreCaseAndIdUsuarioNot(email, id)) {
             throw new IllegalStateException("Ya existe un usuario con el mismo email");
         }
 
-        usuario.setIdUsuario(id);
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + id));
         usuario.setEmail(email);
-        usuario.setNombre(usuario.getNombre().trim());
-        usuario.setApellido(usuario.getApellido().trim());
-        usuario.setDireccion(usuario.getDireccion().trim());
+        usuario.setNombre(request.nombre().trim());
+        usuario.setApellido(request.apellido().trim());
+        usuario.setDireccion(request.direccion().trim());
         return usuarioRepository.save(usuario);
     }
 
@@ -85,7 +88,7 @@ public class UsuarioController {
     @GetMapping("/{idUsuario}/resena/{isbn}")
     public VerificacionResenaResponse verificarResena(@PathVariable @NotNull @Positive Integer idUsuario,
                                                       @PathVariable @NotBlank
-                                                      @Pattern(regexp = "^[0-9]{13}$", message = "El ISBN debe tener 13 dígitos") String isbn) {
+                                                      @Pattern(regexp = "^[0-9]{13}$", message = "El ISBN debe tener 13 digitos") String isbn) {
         boolean existe = usuarioService.existeResena(idUsuario, isbn);
         return new VerificacionResenaResponse(existe);
     }

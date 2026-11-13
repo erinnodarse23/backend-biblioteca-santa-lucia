@@ -1,4 +1,4 @@
-﻿param(
+param(
     [switch]$SkipDbReset,
     [switch]$SkipBuild,
     [string]$DbName = "biblioteca_test"
@@ -176,8 +176,8 @@ $r = InvokeApi POST "/api/libros" @{
     numPaginas = 432
     cantidadEjemplares = 3
     sintesis = "Novela del realismo magico"
-    autor = @{ idAutor = $autorId }
-    genero = @{ idGenero = 1 }
+    idAutor = $autorId
+    idGenero = 1
 }
 AssertEq $r.Status 201 "POST /api/libros valido"
 
@@ -201,7 +201,7 @@ $u2 = (InvokeApi POST "/api/usuarios" @{ nombre = "Otro"; apellido = "User"; ema
 $null = InvokeApi POST "/api/libros" @{
     isbn = "9788437604954"; titulo = "Rayuela"; fechaPublicacion = "1963-06-28"
     numPaginas = 600; cantidadEjemplares = 1; sintesis = "Novela"
-    autor = @{ idAutor = 1 }; genero = @{ idGenero = 1 }
+    idAutor = 1; idGenero = 1
 }
 AssertEq (InvokeApi POST "/api/prestamos" @{ idUsuario = $u.idUsuario; isbn = "9788437604954"; diasPrestamo = 7 }).Status 201 "POST prestamo 1 (con ejemplar)"
 AssertEq (InvokeApi POST "/api/prestamos" @{ idUsuario = $u2.idUsuario; isbn = "9788437604954"; diasPrestamo = 7 }).Status 409 "POST prestamo 2 (sin ejemplares)"
