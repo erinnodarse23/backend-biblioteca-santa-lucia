@@ -30,7 +30,7 @@ Su rol en el portafolio es mostrar los **fundamentos** sobre los que se construy
 | PostgreSQL 18 local | PostgreSQL gestionado en ZevCloud |
 | Docker Compose para dev | Docker + Render + CI/CD |
 
-**Qué sí demuestra:** modelado relacional, JPA/Hibernate, Bean Validation, Spring Data, diseño de API REST, manejo centralizado de errores, testing de servicios y controllers, migración de stack mayor (Spring Boot 3 → 4, Java 17 → 25, PG 10 → 18).
+**Qué sí demuestra:** modelado relacional, JPA/Hibernate, Bean Validation, Spring Data, diseño de API REST, manejo centralizado de errores, testing de servicios y exception handling, migración de stack mayor (Spring Boot 3 → 4, Java 17 → 25, PG 10 → 18).
 
 **Qué no intenta ser:** un sistema de producción con autenticación, rate limiting o dashboards — eso está en ecasa.
 
@@ -130,7 +130,7 @@ backend-biblioteca-santa-lucia/
 - 🚫 Solo se puede reseñar un libro que **ya fue devuelto**
 
 ### Calidad de código
-- ✅ **Bean Validation** en DTOs (`@NotBlank`, `@Size`, `@Pattern`, `@Positive`)
+- ✅ **Bean Validation en DTOs de los 6 módulos** (`@NotBlank`, `@Size`, `@Pattern`, `@Positive`, `@Email`)
 - 🚨 **GlobalExceptionHandler** con `@ControllerAdvice`: 400 (validación), 404 (no encontrado), 409 (regla de negocio o integridad), 500 (sin leaks)
 - 🛡️ **409 para FK violations** sin filtrar detalles técnicos al cliente
 - 🗄️ **SQL versionado** con schema + seed + 7 índices (incluye índice parcial para préstamos activos)
@@ -245,7 +245,7 @@ Valida contra servidor real + PostgreSQL real:
 El 100% de las queries de este proyecto son CRUD sobre entidades con relaciones bien definidas (1:N, N:M). JPA brilla aquí: `findByTituloContaining`, `@ManyToOne`/`@OneToMany`, proyecciones. En **ecasa**, en cambio, usé `JdbcTemplate` porque el 80% de las queries eran agregaciones con `LEFT JOIN LATERAL`. La elección depende del tipo de acceso a datos, no de una preferencia.
 
 ### 2. Bean Validation en DTOs, no en entidades
-Las entidades JPA son modelo de persistencia; los DTOs son contrato de API. Validar en el DTO (`@NotBlank`, `@Email`, `@Positive`) mantiene separadas ambas responsabilidades.
+Las entidades JPA son modelo de persistencia; los DTOs son contrato de API. Validar en el DTO (`@NotBlank`, `@Email`, `@Positive`) mantiene separadas ambas responsabilidades. Los 6 módulos usan DTOs de request; las entidades no tienen Bean Validation, solo anotaciones JPA.
 
 ### 3. GlobalExceptionHandler con distinción semántica de errores
 - **400** para errores de validación (con lista de campos)
@@ -289,8 +289,7 @@ Startup pasó de **~45s a ~13-17s**. Los 16 tests unitarios pasaron sin cambios 
 - [x] GitHub Actions CI (Java 25 + 16 unit tests + PostgreSQL 18 + smoke E2E)
 
 ### 🚧 Futuro
-- [ ] Refactorizar controllers para usar DTOs en `Libro`, `Genero` y `Usuario` (hoy usan entidades)
-- [ ] Tests de controller con `@WebMvcTest` y `MockMvc`
+- [ ] Tests de controller con `@WebMvcTest` y `MockMvc` (verificara el fix del ISBN en PUT)
 - [ ] Tests de repositorio con `@DataJpaTest`
 - [ ] Migrar a Spring Boot 4.2 cuando salga
 
@@ -325,6 +324,6 @@ MIT — ver [LICENSE](LICENSE).
 
 **⭐ Proyecto complementario a [telefonia-ecasa](https://github.com/erinnodarse23/telefonia-ecasa)** ⭐
 
-Hecho con ❤️ en Cuba 🇨🇺
+Hecho con ❤️ en Cuba
 
 </div>
